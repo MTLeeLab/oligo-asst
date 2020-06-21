@@ -6,7 +6,7 @@ full details.
 Copyright 2020 Miler T. Lee.
 
 
-application.py: Oligo-ASST web interface using Dash framework
+app.py: Oligo-ASST web interface using Dash framework
 Author: Miler Lee
 """
 
@@ -27,16 +27,19 @@ import oligo_asst
 import mtl_fasta
 
 app = dash.Dash(__name__, assets_folder='assets/')
+server = app.server
 #application = app.server #for AWS
-server = app.server #for heroku
+
 
 def about_blurb():
 	"""
 	Description of the web app	
 	"""
-	blurb = [html.P('Oligo-ASST (Antisense spaced tiled) designs oligos for RNaseH-mediated RNA digestion for applications such as rRNA depletion for RNA-seq libraries.'),
+	blurb = [html.P('Oligo-ASST (Anti-Sense Spaced Tiled) designs antisense oligos for RNaseH-mediated RNA digestion, for applications such as rRNA depletion of RNA-seq libraries.'),
+	html.P('Given an input sequence provided as a FASTA file, Oligo-ASST attempts to find oligo target regions sparsely tiled across the length of the sequence as close to an RNA-DNA melting temperature of 70-80C as possible.'),
+	html.P(['If multiple input sequences are provided in the FASTA file, Oligo-ASST can optionally design oligos that target multiple sequences, to decrease the total number of oligos needed for full targeting. This feature works best if the sequences are not highly divergent and have been aligned by a program such as ', html.A('MUSCLE', href='https://www.ebi.ac.uk/Tools/msa/muscle/'), ' beforehand.']),
 	html.P('If you find this useful, please cite Phelps et al, 2020. Optimized design of antisense oligomers for targeted rRNA depletion, bioRxiv.'),
-	html.P('Contact: Miler Lee, miler at pitt.edu.')
+	html.P(['Contact: ', html.A('M.T. Lee Lab', href='https://mtleelab.pitt.edu'), ', miler at pitt.edu.'])
 	]
 
 
@@ -55,7 +58,7 @@ def precalc_oligos():
 	
 	
 		html.P(html.A(href= '/assets/drerio_rrna_oligos.txt',
-			children='Zebrafish Maternal+Somatic 28S, 18S, 5.8S; 5S, 16S, 12S rRNA',
+			children='Zebrafish Maternal+Somatic 28S, 18S, 5.8S 5S; 16S, 12S rRNA',
 			download='drerio_rrna_oligos.txt')),
 			
 	])
@@ -228,6 +231,17 @@ def set_coverage(ident, seq, data):
 # Layout components
 ###
 
+def upload_alert_blurb(fname = None, msg = None):
+	"""
+	"""
+	if not fname:
+		return ['No file loaded. ', html.A('Load a sample file', href='#', id='load-sample-fasta-link')]
+	elif msg:
+		return ['{}: {} '.format(msg, fname), html.A('Load a sample file', href='#', id='load-sample-fasta-link')]
+	else:
+		return ['{} uploaded (Click Sequence tab to view)'.format(fname), html.A('', href='#', id='load-sample-fasta-link')]
+
+
 def layout_fasta_upload_div():
 	return html.Div(
 		id='seq-view-fasta-upload',
@@ -250,7 +264,8 @@ def layout_fasta_upload_div():
 					FASTA file (<1MB)"
 				]),
 			),
-			html.I(id='upload-alert', children=[])
+			html.Div(id='upload-alert', children=upload_alert_blurb(), style={'font-size': '0.8em', 'font-style':'italic','display':'inline-block'})
+
 		]
 	)
 
@@ -258,7 +273,7 @@ def layout_fasta_upload_div():
 def layout_basic_params_div():
 	return html.Div([
 	
-		html.P('Default: 39-40nt oligos spaced <=30 nts apart. Some parameter combinations may not be feasible given the input sequence'),
+		html.P('Default: 39-40nt oligos spaced <=30 nts apart. Some parameter combinations may not be feasible given the input sequence', style = {'margin-top': '25px'}),
 		
 		html.Table(children=[
 			html.Tr([
@@ -350,7 +365,7 @@ def layout_multiseq_params_div():
 							max=16,
 							placeholder='1 = no wildcards'
 						),
-						html.Abbr("\u24D8", title='Number of targets per oligo, as a function of number of wildcard bases encoded. E.g., 0 wildcards = 1 expansion, 2 wildcards x 2 expansions each = 4 total expansions')
+						html.Abbr("\u24D8", title='Wildcards represent combinations of bases (e.g., R means A or G, N means any base). Expansions are the number of targets per oligo, as a function of number of wildcards encoded. E.g., 0 wildcards = 1 expansion, 2 wildcards each representing 2 possible bases is 2x2 = 4 total expansions')
 					])
 				]),
 				
@@ -364,7 +379,7 @@ def layout_multiseq_params_div():
 						)
 					]),
 				
-					html.Td([html.Abbr('\u24D8', title='If an oligo begins or ends with a wildcard character, trim it off even if it violates the oligo length range')
+					html.Td([html.Abbr('\u24D8', title='If an oligo begins or ends with a wildcard base, trim it off even if it violates the oligo length range')
 					])
 				])
 			])
@@ -382,7 +397,8 @@ def layout():
 #		className='column',
 		style= {'width': '40%', 'display': 'inline-block', 'vertical-align' : 'top'},
 		children=[
-		html.H2('Oligo-ASST'),
+		html.H2('Oligo-ASST', style={'display':'inline-block'}),
+		html.H5('Design antisense oligos for RNA depletion',style={'display':'inline', 'margin-left': '10px', 'color': '#758b9e'}),
 		dcc.Tabs(id='seq-view-tabs', value='ctrl-tab', 
 			children=[
 			#FASTA entry tab
@@ -454,10 +470,12 @@ def layout():
 				style={'padding': '10px'},
 				selected_style={'padding': '10px'},				
 				
-				children=about_blurb()
+				children=html.Div(about_blurb(), style={'font-size': '0.9em'})
 			)
-		]
-	)]),
+		]),
+		html.Hr(style = {'border-top': '1px','margin-top': '50px'}),
+		html.P(['Oligo-ASST is brought to you by the ', html.A('M.T. Lee lab', href='https://mtleelab.pitt.edu'), ', University of Pittsburgh. ', 'If you use this tool, please cite Phelps et al, 2020, Optimized design of antisense oligomers for targeted rRNA depletion, bioRxiv.'], style={'font-size': '0.75em'})
+	]),
 
 
 	#Spacer
@@ -483,25 +501,41 @@ def layout():
 	])
 
 
+
+#		children = ['{} uploaded (Click Sequence tab to view)'.format(fname), html.A('', href='#', id='load-sample-fasta-link')]
+			
+#	return html.Div(id='upload-alert', children, style={'font-size': '0.8em', 'font-style':'italic','display':'inline-block'})
+
+
+#			html.Div(id='upload-alert', upload_alert_blurb(), style={'font-size': '0.8em', 'font-style':'italic','display':'inline-block'})
+
+
+
 def callbacks(_app):
 
 	#FASTA file upload
 	@_app.callback(
 		[Output('upload-alert', 'children'),
 		Output('seq-view-component-container-outer', 'children'),
-		Output('right-side', 'children')
+		Output('right-side', 'children'),
 		],
 		[Input('upload-fasta-data', 'filename'),
-		Input('upload-fasta-data', 'contents')]
+		Input('upload-fasta-data', 'contents'),
+		Input('load-sample-fasta-link', 'n_clicks')]
 	)
-	def update_upload_msg(fname, contents):
-		if not fname:
-			return 'No file loaded', None, table_component()
-
+	def update_upload_msg(fname, contents, sample_file_clicks):
 		try:
-			content_type, content_str = contents.split(',')
-			content_str = base64.b64decode(content_str).decode('UTF-8')
-
+			if not fname:
+				if sample_file_clicks:
+					print('Im here')
+					fname = 'zebrafish_28s_aligned.fa'
+					content_str = open('assets/' + fname).read()
+				else:
+					return upload_alert_blurb(), None, table_component()			
+			else:
+				content_type, content_str = contents.split(',')
+				content_str = base64.b64decode(content_str).decode('UTF-8')
+		
 			seq_viewers = []
 			multi_fasta = mtl_fasta.parse_fasta(content_str)
 #			multi_fasta = pr.read_fasta(datapath_or_datastring=content_str, is_datafile=False)
@@ -528,11 +562,12 @@ def callbacks(_app):
 			#TODO: Perform a check for proper DNA sequence
 			#TODO: Filesize warning?
 			container = html.Div(id='seq-view-component-container', children=seq_viewers)
-			
-			return '{} uploaded'.format(fname), container, table_component()
+
+			return upload_alert_blurb(fname), container, table_component()			
 		except Exception as e:
 			print(e)
-			return 'File upload error: {}'.format(fname), None, table_component()
+			return upload_alert_blurb(fname, 'File upload error'), None, table_component()
+			
 
 
 	#Do the computation upon button press
@@ -637,5 +672,6 @@ callbacks(app)
 					
 if __name__ == '__main__':
 #	application.run(debug=True, port=8080) #for AWS
-	application.run(debug=True)
+	server.run(debug=True)
+
 	
