@@ -2,5 +2,18 @@ body {
     font-family: sans-serif;
 }
 h1, h2, h3 {
-    color: #1D4A71
+    color: #1D4A71;
+}
+
+a {
+	color: #1D4A71;
+}
+
+abbr {
+	border: none;
+	text-decoration: none;
+}
+
+P {
+	line-height: 1.25;
 }
