@@ -27,8 +27,8 @@ import oligo_asst
 import mtl_fasta
 
 app = dash.Dash(__name__, assets_folder='assets/')
-application = app.server #for AWS
-
+#application = app.server #for AWS
+server = app.server #for heroku
 
 def about_blurb():
 	"""
@@ -636,6 +636,6 @@ callbacks(app)
 
 					
 if __name__ == '__main__':
-	application.run(debug=True, port=8080) #for AWS
-
+#	application.run(debug=True, port=8080) #for AWS
+	application.run(debug=True)
 	
