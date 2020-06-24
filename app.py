@@ -6,7 +6,7 @@ full details.
 Copyright 2020 Miler T. Lee.
 
 
-app.py: Oligo-ASST web interface using Dash framework
+application.py: Oligo-ASST web interface using Dash framework
 Author: Miler Lee
 """
 
@@ -36,7 +36,9 @@ def about_blurb():
 	Description of the web app	
 	"""
 	blurb = [html.P('Oligo-ASST (Anti-Sense Spaced Tiled) designs antisense oligos for RNaseH-mediated RNA digestion, for applications such as rRNA depletion of RNA-seq libraries.'),
+	html.P(html.Img(src='assets/phelps20_graphical_abstract_v2.png', alt = 'Oligo-ASST diagram', style= {'width': '75%'}), style={'text-align': 'center'}),
 	html.P('Given an input sequence provided as a FASTA file, Oligo-ASST attempts to find oligo target regions sparsely tiled across the length of the sequence as close to an RNA-DNA melting temperature of 70-80C as possible.'),
+	html.P(html.Img(src='assets/oligo_parameter_cartoon.png', alt = 'Oligo parameter diagram', style= {'width': '75%'}), style={'text-align': 'center'}),	
 	html.P(['If multiple input sequences are provided in the FASTA file, Oligo-ASST can optionally design oligos that target multiple sequences, to decrease the total number of oligos needed for full targeting. This feature works best if the sequences are not highly divergent and have been aligned by a program such as ', html.A('MUSCLE', href='https://www.ebi.ac.uk/Tools/msa/muscle/'), ' beforehand.']),
 	html.P('If you find this useful, please cite Phelps et al, 2020. Optimized design of antisense oligomers for targeted rRNA depletion, bioRxiv.'),
 	html.P(['Contact: ', html.A('M.T. Lee Lab', href='https://mtleelab.pitt.edu'), ', miler at pitt.edu.'])
@@ -122,9 +124,8 @@ def format_oligo_detail_table(a, display = True):
 
 		style_data_conditional=[
 			{'if': {'row_index': 'odd'}, 'backgroundColor': 'rgb(248,248,248)'},
-			{'if': {'column_id': 'Tm', 'filter_query': '{Tm} lt 70'}, 'color': 'brown', 'fontWeight':'bold', 'backgroundColor': 'yellow'},
-			{'if': {'column_id': 'Tm', 'filter_query': '{Tm} lt 65'}, 'color': 'brown', 'fontWeight':'bold', 'backgroundColor': 'orange'},			
-			{'if': {'column_id': 'Tm', 'filter_query': '{Tm} lt 60'}, 'color': 'white', 'fontWeight':'bold', 'backgroundColor': 'red'},
+			{'if': {'column_id': 'Tm', 'filter_query': '{Tm} lt 65'}, 'color': 'brown', 'fontWeight':'bold', 'backgroundColor': 'yellow'},		
+			{'if': {'column_id': 'Tm', 'filter_query': '{Tm} lt 55'}, 'color': 'white', 'fontWeight':'bold', 'backgroundColor': 'orange'},
 		],
 		
 #		style_table={'maxHeight': '800px', 'overflowY': 'scroll'},
@@ -149,7 +150,7 @@ def format_oligo_summary_table(a, display = True):
 	Returns a dash_table with only the columns for Name, oligo, and wildcard
 	"""
 	
-	summary = a.filter(items = ['Name', 'Antisense_oligo', 'N_targets', 'Wcards'])
+	summary = a.filter(items = ['Name', 'Antisense_oligo', 'Tm', 'N_targets', 'Wcards'])
 	summary = summary.sort_values(by=['Wcards', 'Name']).drop_duplicates()
 	num_oligos = len(summary)
 
@@ -160,6 +161,12 @@ def format_oligo_summary_table(a, display = True):
 		style_header={'backgroundColor': 'rgb(230,230,230)', 'fontWeight':'bold'},
 
 		style_cell={'width': '60px', 'textAlign': 'left'},
+		
+		style_data_conditional=[
+			{'if': {'row_index': 'odd'}, 'backgroundColor': 'rgb(248,248,248)'},
+			{'if': {'column_id': 'Tm', 'filter_query': '{Tm} lt 65'}, 'color': 'brown', 'fontWeight':'bold', 'backgroundColor': 'yellow'},			
+			{'if': {'column_id': 'Tm', 'filter_query': '{Tm} lt 55'}, 'color': 'white', 'fontWeight':'bold', 'backgroundColor': 'orange'},
+		],		
 		
 		style_table={'overflowY': 'scroll'},
 		fixed_rows={ 'headers': True, 'data': 0 },
@@ -202,20 +209,16 @@ def set_coverage(ident, seq, data):
 			continue
 	
 		tooltip = '%d..%d %s ' % (row['Start'], row['End'], row['Name'])
-		if 70 <= row['Tm']:
+		if 65 <= row['Tm']:
 			bgcolor = 'lightgreen'
 
-		elif 65 <= row['Tm'] < 70:
-			tooltip += '(Warning: Tm between 65-69)'
+		elif 55 <= row['Tm'] < 65:
+			tooltip += '(Tm between 55-65)'
 			bgcolor = 'yellow'
 
-		elif 60 <= row['Tm'] < 65:
-			tooltip += '(Warning: Tm between 60-65)'
-			bgcolor = 'orange'
-			
 		else:
-			tooltip += '(Warning: Tm < 60)'
-			bgcolor = 'red'
+			tooltip += '(Tm < 55)'
+			bgcolor = 'orange'
 
 		if(int(row['Start']) <= int(row['End'])):
 			start_coord = index_map[max(last_end, int(row['Start'])-1)]
@@ -527,11 +530,10 @@ def callbacks(_app):
 		try:
 			if not fname:
 				if sample_file_clicks:
-					print('Im here')
 					fname = 'zebrafish_28s_aligned.fa'
 					content_str = open('assets/' + fname).read()
 				else:
-					return upload_alert_blurb(), None, table_component()			
+					return upload_alert_blurb(), None, table_component()	
 			else:
 				content_type, content_str = contents.split(',')
 				content_str = base64.b64decode(content_str).decode('UTF-8')
@@ -563,7 +565,7 @@ def callbacks(_app):
 			#TODO: Filesize warning?
 			container = html.Div(id='seq-view-component-container', children=seq_viewers)
 
-			return upload_alert_blurb(fname), container, table_component()			
+			return upload_alert_blurb(fname), container, table_component(),	
 		except Exception as e:
 			print(e)
 			return upload_alert_blurb(fname, 'File upload error'), None, table_component()
