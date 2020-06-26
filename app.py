@@ -54,14 +54,47 @@ def precalc_oligos():
 	"""
 	
 	return html.Div(children = [
-		html.P(html.A(href= '/assets/xlaevis_rrna_oligos.txt',
-			children='Xenopus laevis 28S, 18S, 5.8S, 5S, 16S, 12S rRNA',
-			download='xlaevis_rrna_oligos.txt')),
-	
-	
-		html.P(html.A(href= '/assets/drerio_rrna_oligos.txt',
-			children='Zebrafish Maternal+Somatic 28S, 18S, 5.8S 5S; 16S, 12S rRNA',
-			download='drerio_rrna_oligos.txt')),
+		html.Table([
+			html.Tr([
+				html.Td(["Xenopus laevis"]),
+				html.Td(
+					[html.A(href= '/assets/xla_oligos_details.csv',
+					children='[oligos+details]',
+					download='xlaevis_rrna_oligos_details.csv'),
+					
+					" (Verified, Phelps 2020)"					
+				] ,style = {'padding': '10px'}),
+					
+			], style = {'border-bottom': '1px solid gray'}),
+
+			html.Tr([
+				html.Td(["Xenopus tropicalis"]),
+				html.Td([
+					html.A(href= '/assets/xtr_oligos.csv',
+					children='[oligos]',
+					download='xtropicalis_rrna_oligos.txt'),
+					
+					html.A(href= '/assets/xtr_full_details.csv',
+					children='[full details]',
+					download='xtropicalis_rrna_full_details.txt'),
+					
+					" (Predicted)"
+				] ,style = {'padding': '10px'}),
+			], style = {'border-bottom': '1px solid gray'}),
+			
+			
+			html.Tr([
+				html.Td(["Zebrafish (maternal+somatic)"]),
+				html.Td(
+					[html.A(href= '/assets/zf_oligos_details.csv',
+					children='[oligos+details]',
+					download='drerio_rrna_oligos_details.csv'),
+					
+					" (Verified, Phelps 2020)"
+					
+				],style = {'padding': '10px'})				
+			], style = {'border-bottom': '1px solid gray'}),
+		], style = {'border-collapse': 'collapse'})
 			
 	])
 
