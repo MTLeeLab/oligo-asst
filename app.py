@@ -72,11 +72,11 @@ def precalc_oligos():
 				html.Td([
 					html.A(href= '/assets/xtr_oligos.csv',
 					children='[oligos]',
-					download='xtropicalis_rrna_oligos.txt'),
+					download='xtropicalis_rrna_oligos.csv'),
 					
 					html.A(href= '/assets/xtr_full_details.csv',
 					children='[full details]',
-					download='xtropicalis_rrna_full_details.txt'),
+					download='xtropicalis_rrna_full_details.csv'),
 					
 					" (Predicted)"
 				] ,style = {'padding': '10px'}),
