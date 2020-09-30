@@ -309,7 +309,7 @@ def layout_fasta_upload_div():
 def layout_basic_params_div():
 	return html.Div([
 	
-		html.P('Default: 39-40nt oligos spaced <=30 nts apart. Some parameter combinations may not be feasible given the input sequence', style = {'margin-top': '25px'}),
+		html.P('Default: 39-40nt oligos spaced <=30 nts apart, favoring melting temperatures between 70-80C. Some parameter combinations may not be feasible given the input sequence', style = {'margin-top': '25px'}),
 		
 		html.Table(children=[
 			html.Tr([
@@ -341,6 +341,27 @@ def layout_basic_params_div():
 				)
 			]),
 			html.Tr([
+				html.Td(html.H4('Tm range (lo/hi C)'),
+				),
+				html.Td([dcc.Input(
+					id='tm-low-input',
+					type='number',
+					min=40,
+					max=95,
+					value='70'
+					),
+				]),
+				html.Td([dcc.Input(
+					id='tm-high-input',
+					type='number',
+					min=40,
+					max=95,
+					value='80'
+					),
+				]),
+			]),
+			
+			html.Tr([
 				html.Td(html.H4('Oligo name prefix'),
 				),
 				html.Td([dcc.Input(
@@ -366,7 +387,7 @@ def layout_multiseq_params_div():
 
 		html.Table([
 			html.Tr([			
-				html.Th(['For >1 input sequences ', html.Abbr('\u24D8', title='For best performance when calculating shared oligos, align your sequences using a tool such as CLUSTAL or MUSCLE and output as a FASTA file prior to uploading here')],
+				html.Th(['For >1 input sequence ', html.Abbr('\u24D8', title='For best performance when calculating shared oligos, align your sequences using a tool such as CLUSTAL or MUSCLE and output as a FASTA file prior to uploading here')],
 						colSpan=2,
 						style = {'textAlign': 'left'}),
 				html.Th()
@@ -619,6 +640,8 @@ def callbacks(_app):
 		State('min-oligo-input', 'value'),
 		State('max-oligo-input', 'value'),
 		State('max-untiled-input', 'value'),
+		State('tm-low-input', 'value'),
+		State('tm-high-input', 'value'),		
 		State('multi-mode-radio', 'value'),
 		State('num-wildcards-input', 'value'),
 		State('table-display-radio', 'value'),
@@ -628,7 +651,7 @@ def callbacks(_app):
 		]
 	)
 
-	def do_tiling(n_clicks, seq_viewer, min_len_str, max_len_str, max_untiled_len, multi_mode, n_wildcards, display_mode, oligo_name_prefix, trim_terminal_wildcards):
+	def do_tiling(n_clicks, seq_viewer, min_len_str, max_len_str, max_untiled_len, tm_low, tm_high, multi_mode, n_wildcards, display_mode, oligo_name_prefix, trim_terminal_wildcards):
 	
 		if not seq_viewer:
 			return None, {'display': 'none'}, None, True
@@ -637,9 +660,12 @@ def callbacks(_app):
 		if n_clicks:
 			min_len = min(int(min_len_str), int(max_len_str))
 			max_len = max(int(min_len_str), int(max_len_str))
+			min_tm = min(int(tm_low), int(tm_high))
+			max_tm = max(int(tm_low), int(tm_high))
+			
 			idents = [x['props']['title'] for x in seq_viewer]
 			seqs = [x['props']['sequence'] for x in seq_viewer]
-			oligos = oligo_asst.do_all(idents, seqs, min_len, max_len, int(max_untiled_len), (multi_mode == 'combined' or multi_mode == 'aligned'), int(n_wildcards), oligo_name_prefix = oligo_name_prefix, trim_terminal_wildcards = len(trim_terminal_wildcards), seqs_aligned = (multi_mode == 'aligned'))
+			oligos = oligo_asst.do_all(idents, seqs, min_len = min_len, max_len = max_len, tm_low = min_tm, tm_high = max_tm, max_untiled_len = int(max_untiled_len), do_consensus = (multi_mode == 'combined' or multi_mode == 'aligned'), max_wildcard_expansions = int(n_wildcards), oligo_name_prefix = oligo_name_prefix, trim_terminal_wildcards = len(trim_terminal_wildcards), seqs_aligned = (multi_mode == 'aligned'))
 			
 			try:
 				df = pd.read_csv(io.StringIO(oligos), sep=",", dtype = {'Start': 'Int64', 'End': 'Int64'})				
